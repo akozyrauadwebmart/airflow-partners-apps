@@ -147,8 +147,8 @@ def main() -> None:
     start_time = "2025-06-01"
     end_time = "2025-06-21"
     id = "44bc539fc2d47a8377ed"
-    extractor = GetReportsIdDataExtractor()
-    response = extractor.get_response(id)
+    extractor = PostReportsExtractor()
+    response = extractor.get_response(start_time, end_time)
     print(response.status_code)
     print(response.json())
 
