@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from requests import Response
 import requests
+import json
 
 from src import config
 
@@ -144,13 +145,15 @@ class GetReportsIdDataExtractor(ExtractorFactory):
 
     
 def main() -> None:
-    start_time = "2025-06-01"
-    end_time = "2025-06-21"
-    id = "44bc539fc2d47a8377ed"
-    extractor = PostReportsExtractor()
-    response = extractor.get_response(start_time, end_time)
+    start_time = "2025-06-18"
+    end_time = "2025-06-20"
+    id = "3a78cc9136e4db3ca9ed"
+    extractor = GetReportsIdDataExtractor()
+    response = extractor.get_response(id)
     print(response.status_code)
     print(response.json())
+    with open("src\\app\\data\\status_response.json", "w", encoding="utf-8") as file:
+        json.dump(response.json(), file, indent=4, ensure_ascii=False, default=str)
 
 
 if __name__ == "__main__":
