@@ -14,3 +14,13 @@ class ModelFactory(ABC):
 class LiftoffStagingReportModel(ModelFactory):
     DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
     TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_REPORT")
+
+
+class LiftoffStagingAppModel(ModelFactory):
+    DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
+    TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_APP")
+
+
+class LiftoffStagingCreativeModel(ModelFactory):
+    DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
+    TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_CREATIVE")

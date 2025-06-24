@@ -24,7 +24,7 @@ class PostReportsCleaner(ResponseCleanerFactory):
         return self.response.get("id")
 
 
-class GetReportsIdDataCleaner(ResponseCleanerFactory):
+class GetReportsIdStatusCleaner(ResponseCleanerFactory):
 
     def check_state(self) -> bool:
         state = self.get_status()
