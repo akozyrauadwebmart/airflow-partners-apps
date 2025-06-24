@@ -78,16 +78,59 @@ class GetReportsIdDataEnricher(EnricherFactory):
         return records
 
 
+class GetAppsEnricher(EnricherFactory):
+
+    def enrich_api_response(self):
+        now = datetime.now(tz=pytz.timezone(config.DEFAULT_TZ))
+        records = []
+        for row in self.data:
+            record = {
+                "id": uuid4(),
+                "app_id": row.get("id"),
+                "name": row.get("name"),
+                "app_store_id": row.get("app_store_id"),
+                "bundle_id": row.get("bundle_id"),
+                "title": row.get("title"),
+                "platform": row.get("platform"),
+                "optimization_event_id": row.get("optimization_event").get("id"),
+                "optimization_event_name": row.get("optimization_event").get("name"),
+                "state": row.get("state"),
+                "created": now,
+                "updated": now
+            }
+            records.append(record)
+        return records
+    
+
+class GetCreativesEnricher(EnricherFactory):
+
+    def enrich_api_response(self):
+        now = datetime.now(tz=pytz.timezone(config.DEFAULT_TZ))
+        for row in self.data:
+            row["creative_id"] = row["id"]
+            row["id"] = uuid4()
+            row["name"] = None if "name" not in row else row["name"]
+            row["preview_url"] = None if "preview_url" not in row else row["preview_url"]
+            row["full_html_preview_url"] = None if "full_html_preview_url" not in row else row["full_html_preview_url"]
+            row["width"] = None if "width" not in row else row["width"]
+            row["height"] = None if "height" not in row else row["height"]
+            row["video_duration"] = None if "video_duration" not in row else row["video_duration"]
+            row["video_url"] = None if "video_url" not in row else row["video_url"]
+            row["created"] = now
+            row["updated"] = now
+        return self.data
+
+
 def main() -> None:
-    with open("status_response.json", "r", encoding="utf-8") as file:
+    with open("src/app/data/response_raw.json", "r", encoding="utf-8") as file:
         data = json.load(file)
     start_time = "2020-10-01"
     end_time = "2020-11-01"
 
-    enricher = GetReportsIdDataEnricher(data)
-    enriched_data = enricher.enrich_api_response(start_time, end_time)
+    enricher = GetCreativesEnricher(data)
+    enriched_data = enricher.enrich_api_response()
 
-    with open("enriched_response.json", "w", encoding="utf-8") as file:
+    with open("src/app/data/response_eniched.json", "w", encoding="utf-8") as file:
         json.dump(enriched_data, file, indent=4, ensure_ascii=False, default=str)
 
 

@@ -143,16 +143,32 @@ class GetReportsIdDataExtractor(ExtractorFactory):
         response = requests.get(url=self.url, auth=self.auth)
         return response
 
-    
+
+class GetCreativesExtractor(ExtractorFactory):
+
+    def __init__(
+            self,
+            url = "https://data.liftoff.io/api/v1/creatives",
+            api_key: Optional[str] = None,
+            api_secret: Optional[str] = None
+    ) -> None:
+        super().__init__(url, api_key, api_secret)
+
+    def get_response(self) -> Response:
+        self.set_auth()
+        response = requests.get(url=self.url, auth=self.auth)
+        return response
+
+
 def main() -> None:
     start_time = "2025-06-18"
     end_time = "2025-06-20"
     id = "3a78cc9136e4db3ca9ed"
-    extractor = GetReportsIdDataExtractor()
-    response = extractor.get_response(id)
+    extractor = GetCreativesExtractor()
+    response = extractor.get_response()
     print(response.status_code)
     print(response.json())
-    with open("src\\app\\data\\status_response.json", "w", encoding="utf-8") as file:
+    with open("src/app/data/response_raw.json", "w", encoding="utf-8") as file:
         json.dump(response.json(), file, indent=4, ensure_ascii=False, default=str)
 
 
