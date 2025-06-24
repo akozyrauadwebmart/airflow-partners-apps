@@ -17,19 +17,21 @@ class ResponseCleanerFactory(ABC):
         with open(path, "r", encoding="utf-8") as file:
             self.response = json.load(file)
 
-    @abstractmethod
-    def clean(self) -> Union[List, Dict, None]:
-        pass
-
 
 class PostReportsCleaner(ResponseCleanerFactory):
-
-    def clean(self) -> Union[List, Dict, None]:
-        pass
 
     def get_id_from_response(self) -> str:
         return self.response.get("id")
 
 
 class GetReportsIdDataCleaner(ResponseCleanerFactory):
-    pass
+
+    def check_state(self) -> bool:
+        state = self.get_status()
+        return self.is_ready_to_download(state)
+    
+    def get_status(self) -> str:
+        return self.response.get("state")
+    
+    def is_ready_to_download(self, state: str) -> bool:
+        return state == "completed"
