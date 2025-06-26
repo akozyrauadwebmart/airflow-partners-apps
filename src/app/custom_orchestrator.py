@@ -2,6 +2,7 @@ from time import sleep
 import json
 
 from src.app.extractors import liftoff as ex_lift
+from src.app.extractors import secret as ex_secret
 from src.app.cleaners import liftoff as cl_lift
 from src.app.enrichers import liftoff as en_lift
 from src.app.loaders import liftoff as ld_lift
@@ -66,10 +67,30 @@ class ELTApp:
 
         loader = ld_lift.GetAppsStagingLoader(response_enriched)
         loader.load_data_to_clickhouse()
-    
+
+
+class ELTCampaign:
+
+    def elt(self) -> None:
+        api_key = "60d83c8c0e"
+        extractor_secret = ex_secret.LiftoffSecretExtractor()
+        api_secret = extractor_secret.get_api_secret_by_api_key(api_key)
+        print(78)
+
+        extractor_api = ex_lift.GetCampaignsExtractor(api_key, api_secret)
+        response_raw = extractor_api.get_response()
+        print(82)
+
+        enricher = en_lift.GetCampaignsEnricher(response_raw.json())
+        response_enriched = enricher.enrich_api_response()
+
+        loader = ld_lift.GetCampaignsStagingLoader(response_enriched)
+        db_name = loader.create_st_liftoff_db_name(api_key)
+        loader.load_data_to_clickhouse(db_name=db_name)
+
 
 def main() -> None:
-    elt = ELTApp()
+    elt = ELTCampaign()
     elt.elt()
 
 

@@ -44,11 +44,21 @@ class LoaderFactory(ABC):
     def get_default_ch_client(self) -> Client:
         return client_init.create_client()
     
-    def load_data_to_clickhouse(self, data: Optional[pandas.DataFrame] = None) -> None:
+    def create_st_liftoff_db_name(self, api_key) -> str:
+        return f"st_liftoff_{api_key}"
+    
+    def load_data_to_clickhouse(
+            self,
+            data: Optional[pandas.DataFrame] = None,
+            db_name: Optional[str] = None,
+            table_name: Optional[str] = None
+    ) -> None:
+        db_name = self.model.DB_NAME if db_name is None else db_name
+        table_name = self.model.TABLE_NAME if table_name is None else table_name
         df = pandas.DataFrame(self.data) if data is None else data
         self.ch_client.insert_df(
-            database=self.model.DB_NAME,
-            table=self.model.TABLE_NAME,
+            database=db_name,
+            table=table_name,
             df=df
         )
         print("The data is loaded successfully")
@@ -93,14 +103,27 @@ class GetCreativesStagingLoader(LoaderFactory):
         super().__init__(data, path_to_data, model, ch_client)
 
 
+class GetCampaignsStagingLoader(LoaderFactory):
+
+    def __init__(
+            self,
+            data: Optional[Union[List, Dict]] = None,
+            path_to_data: Optional[str] = None,
+            model: models.ModelFactory = models.LiftoffStagingCampaignModel,
+            ch_client: Optional[Client] = None
+    ) -> None:
+        super().__init__(data, path_to_data, model, ch_client)
+
+
 def main() -> None:
-    loader = GetCreativesStagingLoader(path_to_data="src/app/data/response_eniched.json")
+    loader = GetCampaignsStagingLoader(path_to_data="src/app/data/response_eniched.json")
     data = loader.get_json_data_from_local_storage(
-        "src/app/data/response_eniched.json",
-        ["created_at", "created", "updated"]
+        "src/app/data/response_eniched.json"
     )
     df = pandas.DataFrame(data)
-    loader.load_data_to_clickhouse(df)
+    print(df['state_last_changed_at'].dtypes)
+    db_name = loader.create_st_liftoff_db_name("60d83c8c0e")
+    loader.load_data_to_clickhouse(df, db_name)
 
 
 if __name__ == "__main__":

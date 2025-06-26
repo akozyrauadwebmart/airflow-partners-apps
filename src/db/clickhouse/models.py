@@ -12,15 +12,22 @@ class ModelFactory(ABC):
 
 
 class LiftoffStagingReportModel(ModelFactory):
-    DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
     TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_REPORT")
 
 
 class LiftoffStagingAppModel(ModelFactory):
-    DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
     TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_APP")
 
 
 class LiftoffStagingCreativeModel(ModelFactory):
-    DB_NAME = os.getenv("DB_NAME_LIFTOFF_STAGING")
     TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_CREATIVE")
+
+
+class LiftoffStagingCampaignModel(ModelFactory):
+    TABLE_NAME = os.getenv("TABLE_NAME_LIFTOFF_STAGING_CAMPAIGN")
+
+
+class LiftoffSecretAccountModel(ModelFactory):
+    DB_NAME = os.getenv("DB_NAME_SECRET")
+    TABLE_NAME = os.getenv("TABLE_NAME_SECRET_ACCOUNT")
+    FULL_NAME = DB_NAME + "." + TABLE_NAME

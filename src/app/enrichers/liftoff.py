@@ -119,6 +119,18 @@ class GetCreativesEnricher(EnricherFactory):
             row["created"] = now
             row["updated"] = now
         return self.data
+    
+
+class GetCampaignsEnricher(EnricherFactory):
+
+    def enrich_api_response(self) -> list[Dict]:
+        now = datetime.now(tz=pytz.timezone(config.DEFAULT_TZ))
+        for row in self.data:
+            row["campaign_id"] = row["id"]
+            row["id"] = uuid4()
+            row["created"] = now
+            row["updated"] = now
+        return self.data
 
 
 def main() -> None:
@@ -127,7 +139,7 @@ def main() -> None:
     start_time = "2020-10-01"
     end_time = "2020-11-01"
 
-    enricher = GetCreativesEnricher(data)
+    enricher = GetCampaignsEnricher(data)
     enriched_data = enricher.enrich_api_response()
 
     with open("src/app/data/response_eniched.json", "w", encoding="utf-8") as file:
