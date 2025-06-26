@@ -145,6 +145,10 @@ class GetReportsIdDataExtractor(ExtractorFactory):
 
 
 class GetCreativesExtractor(ExtractorFactory):
+    """
+    Docs:  
+    https://docs.liftoff.io/advertiser/reporting_api#get-creatives
+    """
 
     def __init__(
             self,
@@ -158,13 +162,31 @@ class GetCreativesExtractor(ExtractorFactory):
         self.set_auth()
         response = requests.get(url=self.url, auth=self.auth)
         return response
+    
+
+class GetCampaignsExtractor(ExtractorFactory):
+
+    def __init__(
+            self,
+            api_key: str,
+            api_secret: str,
+            url: Optional[str] = "https://data.liftoff.io/api/v1/campaigns"
+    ) -> None:
+        super().__init__(url, api_key, api_secret)
+
+    def get_response(self) -> Response:
+        self.set_auth()
+        response = requests.get(url=self.url, auth=self.auth)
+        return response
 
 
 def main() -> None:
     start_time = "2025-06-18"
     end_time = "2025-06-20"
     id = "3a78cc9136e4db3ca9ed"
-    extractor = GetCreativesExtractor()
+    api_key = "3aa24b5688"
+    api_secret = "9XZmSsbXAun9GCruQnweHQ=="
+    extractor = GetCampaignsExtractor(api_key, api_secret)
     response = extractor.get_response()
     print(response.status_code)
     print(response.json())
