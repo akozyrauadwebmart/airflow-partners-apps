@@ -25,6 +25,22 @@ class EnricherFactory(ABC):
     def save_data_to_local_storage(self, data: Union[List, Dict], path: str) -> None:
         with open(path, "r", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False, default=str)
+        
+    def replace_single_quote_in_dict(
+            self,
+            input_dict: dict[Any],
+            columns: list[str]
+    ) -> dict[Any]:
+        for column in columns:
+            input_dict[column] = self.replace_single_quote(input_dict[column])
+        return input_dict
+    
+    def replace_single_quote(
+            self,
+            input_str: str,
+            new: str = " "
+    ) -> str:
+        return input_str.replace("'", new)
 
 
 class GetReportsIdDataEnricher(EnricherFactory):
