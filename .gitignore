@@ -9,3 +9,6 @@ logs
 
 # json
 *.json
+
+# pycache
+*__pycache__

@@ -1,7 +1,6 @@
 from abc import ABC
-from typing import Any
-import json
-from datetime import datetime
+from typing import Any, Union
+from src.app import utils
 
 
 class APITransformerFactory(ABC):
@@ -9,14 +8,10 @@ class APITransformerFactory(ABC):
     def __init__(
             self,
             api_key: str,
-            local_path: str
+            data: Union[dict, list]
     ) -> None:
         self.api_key = api_key
-        self.data = self.get_data_from_local_path(local_path)
-
-    def get_data_from_local_path(self, path: str) -> list[dict[Any]]:
-        with open(path, "r", encoding="utf-8") as file:
-            return json.load(file)
+        self.data = data
 
 
 class APIGetAppsTransformer(APITransformerFactory):
@@ -28,3 +23,19 @@ class APIGetAppsTransformer(APITransformerFactory):
             row["optimization_event_name"] = row.get("optimization_event").get("name")
             del row["optimization_event"]
         return data
+    
+
+def main() -> None:
+    local_connector = utils.LocalConnector()
+    data = local_connector.extract_json_data("src/app/data/3aa24b5688-2025-06-26_21_29_38_348589.json")
+    
+    api_key = "3aa24b5688"
+    transformer = APIGetAppsTransformer(api_key, data)
+    trans_data = transformer.transform_to_one_level_of_nesting()
+
+    path = local_connector.create_path(api_key, "app", "transformed")
+    local_connector.save_json_data(path, trans_data)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import Union, List, Dict, Optional, Any
-import json
-from datetime import datetime
+from abc import ABC
+from typing import Union, Optional, Any
+from src.app import utils
 
 import pandas
 
@@ -13,17 +12,22 @@ class APIResponseCleanerFactory(ABC):
     def __init__(
             self,
             api_key: str,
-            response: Union[List, Dict, None] = None,
-            path_to_response: Optional[str] = None
+            data: Union[dict, list]
     ) -> None:
         super().__init__()
-        self.response = response if path_to_response is None else self.get_response_from_file(path_to_response)
         self.api_key = api_key
+        self.data = data
 
-    def get_response_from_file(self, path: str) -> None:
-        with open(path, "r", encoding="utf-8") as file:
-            return json.load(file)
-
+    def replace_single_quote_in_data(
+            self,
+            data: list[dict[str]] | None = None
+    ) -> list[dict[str]]:
+        data = self.data if data is None else data
+        for item in data:
+            for column in self.single_quote_columns:
+                item[column] = self.replace_single_quote(item[column])
+        return data
+    
     def replace_single_quote(
             self,
             input_str: str,
@@ -43,21 +47,8 @@ class APIResponseCleanerFactory(ABC):
         return df
     
     def transform_response_to_df(self, data: list[dict[Any]] | None = None) -> pandas.DataFrame:
-        data = self.response if data is None else data
+        data = self.data if data is None else data
         return pandas.DataFrame(data)
-    
-    def save_df_to_json(
-            self,
-            df: pandas.DataFrame,
-            path: Optional[str] = None
-    ) -> None:
-        path = self.create_local_path() if path is None else path
-        df.to_json(path, indent=4)
-        print(f"The cleaned response was saved in: {path}")
-
-    def create_local_path(self) -> str:
-        now = str(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
-        return f"src/app/data/cleaned_response_{self.api_key}_{now}.json"
 
 
 class APIGetAppsCleaner(APIResponseCleanerFactory):
@@ -69,19 +60,14 @@ class APIGetAppsCleaner(APIResponseCleanerFactory):
         'bundle_id',
         'title',
         'platform',
-        'optimization_event',
+        'optimization_event_id',
+        'optimization_event_name',
         'state',
     ]
 
-    def create_local_path(self) -> str:
-        now = str(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
-        return f"src/app/data/app_cleaned_response_{self.api_key}_{now}.json"
-
 
 class APIPostReportsCleaner(APIResponseCleanerFactory):
-
-    def get_id_from_response(self) -> str:
-        return self.response.get("id")
+    pass
 
 
 class APIGetReportsIdStatusCleaner(APIResponseCleanerFactory):
@@ -91,7 +77,7 @@ class APIGetReportsIdStatusCleaner(APIResponseCleanerFactory):
         return self.is_ready_to_download(state)
     
     def get_status(self) -> str:
-        return self.response.get("state")
+        return self.data.get("state")
     
     def is_ready_to_download(self, state: str) -> bool:
         return state == "completed"
@@ -111,7 +97,7 @@ class APIGetReportsIdDataCleaner(APIResponseCleanerFactory):
     )
 
     def transform_response_to_df(self, data: list[dict[Any]] | None = None) -> pandas.DataFrame:
-        data = self.response if data is None else data
+        data = self.data if data is None else data
         df = pandas.DataFrame(
             columns=data["columns"],
             data=data["rows"]
@@ -149,20 +135,16 @@ class APIGetCampaignsCleaner(APIResponseCleanerFactory):
 
 def main() -> None:
     api_key = "3aa24b5688"
-    cleaner = APIGetAppsCleaner(
-        api_key=api_key,
-        path_to_response="src/app/data/3aa24b5688-2025-06-26_21_29_38_348589.json"
-    )
+    path_before = "src/app/data/app_transformed_data_3aa24b5688_2025_06_28_12_24_08_013950.json"
 
-    print(cleaner.response)
+    local_connector = utils.LocalConnector()
+    data = local_connector.extract_json_data(path_before)
+    
+    cleaner = APIGetAppsCleaner(api_key, data)
+    cleaned_data = cleaner.replace_single_quote_in_data()
 
-    df = cleaner.transform_response_to_df()
-
-    print(df.head())
-
-    df = cleaner.replace_single_quote_in_df(df)
-    path = cleaner.create_local_path()
-    cleaner.save_df_to_json(df, path)
+    path_after = local_connector.create_path(api_key, "app", "cleaned")
+    local_connector.save_json_data(path_after, cleaned_data)
 
 
 if __name__ == "__main__":

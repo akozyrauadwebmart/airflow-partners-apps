@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Union, List, Dict, Any, Optional
 from uuid import uuid4
 from datetime import datetime
-import json
+from src.app import utils
 
 import pytz
 
@@ -21,26 +21,6 @@ class EnricherFactory(ABC):
     @abstractmethod
     def enrich_api_response(self):
         pass
-
-    def save_data_to_local_storage(self, data: Union[List, Dict], path: str) -> None:
-        with open(path, "r", encoding="utf-8") as file:
-            json.dump(data, file, indent=4, ensure_ascii=False, default=str)
-        
-    def replace_single_quote_in_dict(
-            self,
-            input_dict: dict[Any],
-            columns: list[str]
-    ) -> dict[Any]:
-        for column in columns:
-            input_dict[column] = self.replace_single_quote(input_dict[column])
-        return input_dict
-    
-    def replace_single_quote(
-            self,
-            input_str: str,
-            new: str = " "
-    ) -> str:
-        return input_str.replace("'", new)
 
 
 class GetReportsIdDataEnricher(EnricherFactory):
@@ -98,24 +78,12 @@ class GetAppsEnricher(EnricherFactory):
 
     def enrich_api_response(self):
         now = datetime.now(tz=pytz.timezone(config.DEFAULT_TZ))
-        records = []
-        for row in self.data:
-            record = {
-                "id": uuid4(),
-                "app_id": row.get("id"),
-                "name": row.get("name"),
-                "app_store_id": row.get("app_store_id"),
-                "bundle_id": row.get("bundle_id"),
-                "title": row.get("title"),
-                "platform": row.get("platform"),
-                "optimization_event_id": row.get("optimization_event").get("id"),
-                "optimization_event_name": row.get("optimization_event").get("name"),
-                "state": row.get("state"),
-                "created": now,
-                "updated": now
-            }
-            records.append(record)
-        return records
+        for item in self.data:
+            item["app_id"] = item["id"]
+            item["id"] = uuid4()
+            item["created"] = now
+            item["updated"] = now
+        return self.data
     
 
 class GetCreativesEnricher(EnricherFactory):
@@ -150,17 +118,17 @@ class GetCampaignsEnricher(EnricherFactory):
 
 
 def main() -> None:
-    with open("src/app/data/response_raw.json", "r", encoding="utf-8") as file:
-        data = json.load(file)
-    start_time = "2020-10-01"
-    end_time = "2020-11-01"
+    api_key = "3aa24b5688"
+    path_before = "src/app/data/app_cleaned_data_3aa24b5688_2025_06_28_12_58_49_200333.json"
 
-    enricher = GetCampaignsEnricher(data)
-    enriched_data = enricher.enrich_api_response()
+    local_connector = utils.LocalConnector()
+    data = local_connector.extract_json_data(path_before)
 
-    with open("src/app/data/response_eniched.json", "w", encoding="utf-8") as file:
-        json.dump(enriched_data, file, indent=4, ensure_ascii=False, default=str)
+    enricher = GetAppsEnricher(data)
+    enrihced_data = enricher.enrich_api_response()
 
+    path_after = local_connector.create_path(api_key, "app", "enriched")
+    local_connector.save_json_data(path_after, enrihced_data)
 
 if __name__ == "__main__":
     main()
