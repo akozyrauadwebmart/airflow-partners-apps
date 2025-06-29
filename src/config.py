@@ -26,3 +26,12 @@ class ClickHouseProd:
     USER = os.getenv("CLICKHOUSE_PROD_USER")
     PASSWORD = os.getenv("CLICKHOUSE_PROD_PASSWORD")
     DB_NAME = os.getenv("CLICKHOUSE_PROD_DB")
+    AIRFLOW_CONN_ID = os.getenv("CONN_ID_CLICKHOUSE_PROD")
+
+
+def main() -> None:
+    print(ClickHouseProd.AIRFLOW_CONN_ID)
+
+
+if __name__ == "__main__":
+    main()

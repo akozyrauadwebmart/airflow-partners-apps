@@ -25,7 +25,7 @@ class APIResponseCleanerFactory(ABC):
         data = self.data if data is None else data
         for item in data:
             for column in self.single_quote_columns:
-                item[column] = self.replace_single_quote(item[column])
+                item[column] = self.replace_single_quote(item.get(column))
         return data
     
     def replace_single_quote(
@@ -33,6 +33,8 @@ class APIResponseCleanerFactory(ABC):
             input_str: str,
             new: str = " "
     ) -> str:
+        if input_str is None:
+            return input_str
         return input_str.replace("'", new)
     
     def replace_single_quote_in_df(
@@ -135,15 +137,15 @@ class APIGetCampaignsCleaner(APIResponseCleanerFactory):
 
 def main() -> None:
     api_key = "3aa24b5688"
-    path_before = "src/app/data/app_transformed_data_3aa24b5688_2025_06_28_12_24_08_013950.json"
+    path_before = "src/app/data/creative_raw_data_3aa24b5688_2025_06_29_15_05_17_186848.json"
 
     local_connector = utils.LocalConnector()
     data = local_connector.extract_json_data(path_before)
     
-    cleaner = APIGetAppsCleaner(api_key, data)
+    cleaner = APIGetCreativesCleaner(api_key, data)
     cleaned_data = cleaner.replace_single_quote_in_data()
 
-    path_after = local_connector.create_path(api_key, "app", "cleaned")
+    path_after = local_connector.create_path(api_key, "creative", "cleaned")
     local_connector.save_json_data(path_after, cleaned_data)
 
 

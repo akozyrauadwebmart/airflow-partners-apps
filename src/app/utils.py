@@ -10,7 +10,7 @@ class LocalConnector:
             self,
             api_key: str,
             entity: Literal["app", "report", "campaign", "creative"],
-            data_stage: Literal["row", "trans", "cleaned", "enriched"]
+            data_stage: Literal["raw", "trans", "cleaned", "enriched"]
     ) -> str:
         now = str(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_").replace("-", "_")
         return f"src/app/data/{entity}_{data_stage}_data_{api_key}_{now}.json"

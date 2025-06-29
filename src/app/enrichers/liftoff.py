@@ -93,13 +93,13 @@ class GetCreativesEnricher(EnricherFactory):
         for row in self.data:
             row["creative_id"] = row["id"]
             row["id"] = uuid4()
-            row["name"] = None if "name" not in row else row["name"]
-            row["preview_url"] = None if "preview_url" not in row else row["preview_url"]
-            row["full_html_preview_url"] = None if "full_html_preview_url" not in row else row["full_html_preview_url"]
-            row["width"] = None if "width" not in row else row["width"]
-            row["height"] = None if "height" not in row else row["height"]
-            row["video_duration"] = None if "video_duration" not in row else row["video_duration"]
-            row["video_url"] = None if "video_url" not in row else row["video_url"]
+            row["name"] = row.get("name")
+            row["preview_url"] = row.get("preview_url")
+            row["full_html_preview_url"] = row.get("full_html_preview_url")
+            row["width"] = row.get("width")
+            row["height"] = row.get("height")
+            row["video_duration"] = row.get("video_duration")
+            row["video_url"] = row.get("video_url")
             row["created"] = now
             row["updated"] = now
         return self.data
@@ -119,15 +119,15 @@ class GetCampaignsEnricher(EnricherFactory):
 
 def main() -> None:
     api_key = "3aa24b5688"
-    path_before = "src/app/data/app_cleaned_data_3aa24b5688_2025_06_28_12_58_49_200333.json"
+    path_before = "src/app/data/creative_cleaned_data_3aa24b5688_2025_06_29_15_07_43_268974.json"
 
     local_connector = utils.LocalConnector()
     data = local_connector.extract_json_data(path_before)
 
-    enricher = GetAppsEnricher(data)
+    enricher = GetCreativesEnricher(data)
     enrihced_data = enricher.enrich_api_response()
 
-    path_after = local_connector.create_path(api_key, "app", "enriched")
+    path_after = local_connector.create_path(api_key, "campaign", "enriched")
     local_connector.save_json_data(path_after, enrihced_data)
 
 if __name__ == "__main__":

@@ -12,6 +12,8 @@ from src.app import utils
 
 class LoaderFactory(ABC):
 
+    str_to_datetime_obj_columns = []
+    
     def __init__(
             self,
             api_key: str,
@@ -27,11 +29,17 @@ class LoaderFactory(ABC):
     def get_default_ch_client(self) -> Client:
         return client_init.create_client()
     
-    def transform_datetime_to_obj(self, json_data: list[Dict], columns: list[str]) -> list[Dict]:
-        for record in json_data:
+    def transform_datetime_to_obj(
+            self,
+            columns: list[str] | None = None,
+            data: list[Dict] | None = None
+    ) -> list[Dict]:
+        data = self.data if data is None else data
+        columns = self.str_to_datetime_obj_columns if columns is None else columns
+        for record in data:
             for column in columns:
                 record[column] = datetime.fromisoformat(record[column])
-        return json_data
+        return data
     
     def load_data_to_clickhouse(
             self,
@@ -102,37 +110,41 @@ class GetCreativesStagingLoader(LoaderFactory):
 
     def __init__(
             self,
-            data: Optional[Union[List, Dict]] = None,
-            path_to_data: Optional[str] = None,
-            model: models.ModelFactory = models.LiftoffStagingCreativeModel,
+            api_key: str,
+            data: Union[dict, list],
+            model: Optional[models.ModelFactory] = models.LiftoffStagingCreativeModel,
             ch_client: Optional[Client] = None
     ) -> None:
-        super().__init__(data, path_to_data, model, ch_client)
+        super().__init__(api_key, data, model, ch_client)
 
 
 class GetCampaignsStagingLoader(LoaderFactory):
 
+    str_to_datetime_obj_columns = [
+        "created_at"
+    ]
+
     def __init__(
             self,
-            data: Optional[Union[List, Dict]] = None,
-            path_to_data: Optional[str] = None,
-            model: models.ModelFactory = models.LiftoffStagingCampaignModel,
+            api_key: str,
+            data: Union[dict, list],
+            model: Optional[models.ModelFactory] = models.LiftoffStagingCampaignModel,
             ch_client: Optional[Client] = None
     ) -> None:
-        super().__init__(data, path_to_data, model, ch_client)
+        super().__init__(api_key, data, model, ch_client)
 
 
 def main() -> None:
     api_key = "3aa24b5688"
-    path_before = "src/app/data/app_enriched_data_3aa24b5688_2025_06_28_13_16_36_514155.json"
+    path_before = "src/app/data/campaign_enriched_data_3aa24b5688_2025_06_29_15_10_51_166504.json"
 
     local_connector = utils.LocalConnector()
     data = local_connector.extract_json_data(path_before)
 
-    loader = GetAppsStagingLoader(api_key, data)
-    loader.load_data_to_clickhouse()
+    loader = GetCreativesStagingLoader(api_key, data)
+    data = loader.transform_datetime_to_obj()
+    loader.load_data_to_clickhouse(data=data, delete_data_before_insert=True)
 
 
 if __name__ == "__main__":
     main()
-        

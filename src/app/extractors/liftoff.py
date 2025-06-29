@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, List, Union
 from requests import Response
 import requests
-import json
 from datetime import datetime
+
+from src.app import utils
 
 
 class APIExtractorFactory(ABC):
@@ -33,21 +34,6 @@ class APIExtractorFactory(ABC):
     @abstractmethod
     def get_response(self):
         pass
-
-    def save_response_to_local_json(
-            self,
-            path: Optional[str] = None,
-            response: Optional[Response] = None
-    ) -> None:
-        path = self.create_local_storage_path_for_response() if path is None else path
-        response = self.response if response is None else response
-        with open(path, "w", encoding="utf-8") as file:
-            json.dump(response.json(), file, indent=4, ensure_ascii=False, default=str)
-        print(f"The raw response was saved in: {path}")
-
-    def create_local_storage_path_for_response(self) -> str:
-        now = str(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
-        return f"src/app/data/raw_response{self.api_key}-{now}.json"
 
 
 class APIGetAppsExtractor(APIExtractorFactory):
@@ -215,10 +201,12 @@ def main() -> None:
     api_key = "3aa24b5688"
     api_secret = "9XZmSsbXAun9GCruQnweHQ=="
 
-    extractor = APIGetAppsExtractor(api_key, api_secret)
-    extractor.get_response()
-    path = extractor.create_local_storage_path_for_response()
-    extractor.save_response_to_local_json(path)
+    extractor = APIGetCreativesExtractor(api_key, api_secret)
+    response = extractor.get_response()
+
+    local_connector = utils.LocalConnector()
+    path = local_connector.create_path(api_key, "creative", "raw")
+    local_connector.save_json_data(path, response.json())
 
 
 if __name__ == "__main__":
