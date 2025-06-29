@@ -31,27 +31,23 @@ class LoaderFactory(ABC):
     
     def transform_datetime_to_obj(
             self,
-            columns: list[str] | None = None,
-            data: list[Dict] | None = None
+            columns: list[str] | None = None
     ) -> list[Dict]:
-        data = self.data if data is None else data
         columns = self.str_to_datetime_obj_columns if columns is None else columns
-        for record in data:
+        for record in self.data:
             for column in columns:
                 record[column] = datetime.fromisoformat(record[column])
-        return data
+        return self.data
     
     def load_data_to_clickhouse(
             self,
             table_name: Optional[str] = None,
             db_name: Optional[str] = None,
-            data: Optional[pandas.DataFrame] = None,
             delete_data_before_insert: bool = False
     ) -> None:
         db_name = self.create_st_liftoff_db_name() if db_name is None else db_name
         table_name = self.model.TABLE_NAME if table_name is None else table_name
-        data = self.data if data is None else data
-        df = pandas.DataFrame(data)
+        df = pandas.DataFrame(self.data)
 
         if not df.empty and delete_data_before_insert is True:
             self.delete_full_data(table_name, db_name)
@@ -108,6 +104,8 @@ class GetAppsStagingLoader(LoaderFactory):
 
 class GetCreativesStagingLoader(LoaderFactory):
 
+    str_to_datetime_obj_columns = ["created_at"]
+    
     def __init__(
             self,
             api_key: str,
@@ -117,12 +115,29 @@ class GetCreativesStagingLoader(LoaderFactory):
     ) -> None:
         super().__init__(api_key, data, model, ch_client)
 
+    def load_data_to_clickhouse(
+            self,
+            table_name: Optional[str] = None,
+            db_name: Optional[str] = None,
+            delete_data_before_insert: bool = False
+    ) -> None:
+        self.transform_datetime_to_obj()
+        db_name = self.create_st_liftoff_db_name() if db_name is None else db_name
+        table_name = self.model.TABLE_NAME if table_name is None else table_name
+        df = pandas.DataFrame(self.data)
+
+        if not df.empty and delete_data_before_insert is True:
+            self.delete_full_data(table_name, db_name)
+
+        self.ch_client.insert_df(
+            database=db_name,
+            table=table_name,
+            df=df
+        )
+        print("Data is loaded successfully")
+
 
 class GetCampaignsStagingLoader(LoaderFactory):
-
-    str_to_datetime_obj_columns = [
-        "created_at"
-    ]
 
     def __init__(
             self,
@@ -136,14 +151,13 @@ class GetCampaignsStagingLoader(LoaderFactory):
 
 def main() -> None:
     api_key = "3aa24b5688"
-    path_before = "src/app/data/campaign_enriched_data_3aa24b5688_2025_06_29_15_10_51_166504.json"
+    path_before = "src/app/data/campaign_enriched_data_3aa24b5688_2025_06_29_18_28_14_901732.json"
 
     local_connector = utils.LocalConnector()
     data = local_connector.extract_json_data(path_before)
 
     loader = GetCreativesStagingLoader(api_key, data)
-    data = loader.transform_datetime_to_obj()
-    loader.load_data_to_clickhouse(data=data, delete_data_before_insert=True)
+    loader.load_data_to_clickhouse(delete_data_before_insert=True)
 
 
 if __name__ == "__main__":

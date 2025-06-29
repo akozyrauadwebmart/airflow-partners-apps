@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Union
+from typing import Any, Union, Optional
 from src.app import utils
 
 
@@ -23,7 +23,7 @@ class APIGetAppsTransformer(APITransformerFactory):
             row["optimization_event_name"] = row.get("optimization_event").get("name")
             del row["optimization_event"]
         return data
-    
+
 
 def main() -> None:
     local_connector = utils.LocalConnector()

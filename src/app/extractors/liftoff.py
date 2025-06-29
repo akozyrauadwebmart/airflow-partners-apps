@@ -87,7 +87,7 @@ class APIPostReportsExtractor(APIExtractorFactory):
         self.set_json(start_time, end_time)
         self.set_headers()
         self.response = requests.post(
-            url=self.urßl,
+            url=self.url,
             json=self.json_body,
             auth=self.auth,
             headers=self.headers
@@ -115,9 +115,8 @@ class APIPostReportsExtractor(APIExtractorFactory):
     ) -> None:
         self.headers = {"Content-Type": content_type}
 
-    def get_report_id_from_response(self, response: Optional[Response] = None) -> str:
-        response = self.response if response is None else response
-        return response.json()["id"]
+    def get_report_id_from_response(self) -> str:
+        return self.response.json()["id"]
 
 
 class APIGetReportsIdStatusExtractor(APIExtractorFactory):
@@ -134,6 +133,9 @@ class APIGetReportsIdStatusExtractor(APIExtractorFactory):
         self.set_url(id)
         self.response = requests.get(url=self.url, auth=self.auth)
         return self.response
+    
+    def get_status_from_response(self) -> str:
+        return self.response.json().get("state")
 
 
 class APIGetReportsIdDataExtractor(APIExtractorFactory):
@@ -193,19 +195,29 @@ class APIGetCampaignsExtractor(APIExtractorFactory):
 
 
 def main() -> None:
-    start_time = "2025-06-18"
-    end_time = "2025-06-20"
+    start_time = "2025-06-01"
+    end_time = "2025-06-28"
 
-    id = "3a78cc9136e4db3ca9ed"
+    id = "af06a3d1ea2347a48526"
 
     api_key = "3aa24b5688"
     api_secret = "9XZmSsbXAun9GCruQnweHQ=="
 
-    extractor = APIGetCreativesExtractor(api_key, api_secret)
-    response = extractor.get_response()
+    # extractor = APIPostReportsExtractor(api_key, api_secret)
+    # response = extractor.get_response(start_time, end_time)
+    # report_id = extractor.get_report_id_from_response()
+    # print(report_id)
+
+    # extractor = APIGetReportsIdStatusExtractor(api_key, api_secret)
+    # extractor.get_response(id)
+    # state = extractor.get_status_from_response()
+    # print(state)
+
+    extractor = APIGetReportsIdDataExtractor(api_key, api_secret)
+    response = extractor.get_response(id)
 
     local_connector = utils.LocalConnector()
-    path = local_connector.create_path(api_key, "creative", "raw")
+    path = local_connector.create_path(api_key, "report", "raw")
     local_connector.save_json_data(path, response.json())
 
 

@@ -18,15 +18,11 @@ class APIResponseCleanerFactory(ABC):
         self.api_key = api_key
         self.data = data
 
-    def replace_single_quote_in_data(
-            self,
-            data: list[dict[str]] | None = None
-    ) -> list[dict[str]]:
-        data = self.data if data is None else data
-        for item in data:
+    def replace_single_quote_in_data(self) -> list[dict[str]]:
+        for item in self.data:
             for column in self.single_quote_columns:
                 item[column] = self.replace_single_quote(item.get(column))
-        return data
+        return self.data
     
     def replace_single_quote(
             self,
@@ -119,6 +115,25 @@ class APIGetCreativesCleaner(APIResponseCleanerFactory):
         'video_url'
     )
 
+    t_replace_columns = [
+        "created_at"
+    ]
+
+    def clean(self) -> Union[dict, list]:
+        self.data = self.replace_single_quote_in_data()
+        return self.replace_t_in_str_datatimes()
+
+    def replace_t_in_str_datatimes(
+            self,
+            new: Optional[str] = " ",
+            columns: Optional[list] = None
+    ) -> list:
+        columns = self.t_replace_columns if columns is None else columns
+        for item in self.data:
+            for column in columns:
+                item[column] = item[column].replace("T", new)
+        return self.data
+
 
 class APIGetCampaignsCleaner(APIResponseCleanerFactory):
 
@@ -143,7 +158,7 @@ def main() -> None:
     data = local_connector.extract_json_data(path_before)
     
     cleaner = APIGetCreativesCleaner(api_key, data)
-    cleaned_data = cleaner.replace_single_quote_in_data()
+    cleaned_data = cleaner.clean()
 
     path_after = local_connector.create_path(api_key, "creative", "cleaned")
     local_connector.save_json_data(path_after, cleaned_data)

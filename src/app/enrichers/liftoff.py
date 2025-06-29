@@ -119,7 +119,7 @@ class GetCampaignsEnricher(EnricherFactory):
 
 def main() -> None:
     api_key = "3aa24b5688"
-    path_before = "src/app/data/creative_cleaned_data_3aa24b5688_2025_06_29_15_07_43_268974.json"
+    path_before = "src/app/data/creative_cleaned_data_3aa24b5688_2025_06_29_18_27_34_087775.json"
 
     local_connector = utils.LocalConnector()
     data = local_connector.extract_json_data(path_before)
